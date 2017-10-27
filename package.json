@@ -9,7 +9,7 @@
     "url": "https://github.com/salsita/bunny-migrate"
   },
   "engines": {
-    "node": ">=8.0.0"
+    "node": ">=6.0.0"
   },
   "scripts": {
     "babel": "babel *.js --out-dir dist --source-maps inline",
@@ -20,7 +20,17 @@
   "bin": {
     "bunny-migrate": "bin/bunny-migrate"
   },
-  "keywords": [],
+  "keywords": [
+    "rabbitmq",
+    "amqp",
+    "schema",
+    "instance",
+    "instances",
+    "migrate",
+    "migration",
+    "migration-tool",
+    "zero-downtime"
+  ],
   "devDependencies": {
     "babel-cli": "^6.26.0",
     "babel-polyfill": "^6.26.0",
