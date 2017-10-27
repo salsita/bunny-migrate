@@ -439,7 +439,7 @@ export default class RabbitClient {
       await this.throwOrWarn(`[RabbitClient] there is already existing rule for routing key "${key}"!`, false);
     }
     const exchanges = (adminMsg.schemas[prefix] || {}).exchanges || [];
-    if (!_.include(exchanges, destination)) {
+    if (!_.includes(exchanges, destination)) {
       await this.throwOrWarn(`[RabbitClient] destination exchange "${destination}" was not created as part of schema instance with prefix "${prefix}"!`, false);
     }
     const dest = this.prefixName(prefix, destination);
