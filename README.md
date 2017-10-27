@@ -415,7 +415,95 @@ command is equivalent to `add-rule` command only.
 
 ## Examples
 
-(todo)
+Let's say you have a web application that manages (big) data for its users, and the user can request some (bulk) data
+updates in web interface. Let's say that the bulk update operation can take minutes or hours (e.g. there is some 3rd
+party service involved, perhaps with some API rate limiter), so you decided to have dedicated workers processing these
+updates. Each data bulk update can consist of hundreds or thousands of small operations, and you don't want to track them in
+workers' memory (as if something bad happen to them, the progress is lost completely), nor in your main DB
+(as you prefer subscribe / notify approach to constant DB polling). So you have RabbitMQ in place to store the operation 
+progress there.
+
+You have the DB with table with all information about the users, and all their data as well. Each user has a flag in the
+DB table indicating if they are regular user, beta-test user, or even alpha-test user. The request for data bulk update
+is pushed as a message from web-server to RabbitMQ exchange (let's call it `requests`). The message describes what user
+requested what data bulk update, and workers (subscribed to RabbitMQ queue `requests`, where the exchange passes the
+messages to) will take it from there. The end result is that the user's request for data bulk edit is processed and the
+data is updated accordingly in the DB (and pushed to 3rd party services as well).
+
+Now let's assume you have RabbitMQ installed on your production  machine `machine`, user `user` and password `password` created,
+with access to the RabbitMQ vhost `vhost`. (Also, you have `bunny-migrate` tool installed. ;-))
+
+First of all, since we'll be using only the above described RabbitMQ installation in our example,
+let's create a config file with the following content:
+
+```
+{
+  "uri": "amqp://user:password@machine:5672/vhost",
+  "bunny-x": "bunny-admin"
+}
+```
+
+The `uri` parameter is the RabbitMQ connection string, the second parameter is the name of exchange / queue to store the
+run-time information of the `bunny-migrate` tool.
+
+#### Init run-time
+
+```
+$ bunny-migrate init
+```
+
+This created `bunny-admin` exchange and queue where run-time information about the added schema instances and managed rules
+will be stored.
+
+#### Initial schema
+
+At the beginning, we will need to create the exchange and queue for the messages pushed by web-server(s), we called them
+`requests` in the example above. Also, we want to have our entry point to the processing world, this will be another
+exchange that we'll call e.g. `main`.
+
+There will be a worker process subscribed to `requests` queue that will take the message, check (in DB) for what type of
+user the message is, and push the same message to `main` exchange with routing key corresponding to the user type (let's
+say `regular`, `beta`, or `alpha`).
+
+The initial schema file (stored in file `schema-initial.json`) will be something like this:
+
+```
+{
+  "exchanges": [
+    { "name": "requests", "type": "fanout" },
+    { "name": "main", "type": "topic" }
+  ],
+  "queues": [
+    { "name": "requests" }
+  ],
+  "queueBindings": [
+    { "queue": "requests", "exchange": "requests", "pattern": "" }
+  ]
+}
+```
+
+To add the above queue and exchanges, run
+
+```
+$ bunny-migrate add --schema schema-initial.json --prefix ""
+```
+
+#### Data-processing schema
+
+At this point, there is no queue bound to the `main` exchange. We said there would be a process prushing messages to
+this exchange with routing keys `regular`, `beta`, or `alpha`, based on the user types.
+
+So let's say we want to have queue `bulk-changes` bound to the `main` exchange. Then there would be a worker process
+reading these messages and figuring out what individual items are affected, pushing one message per item to `items` exchange
+/ queue. 
+
+From there we'll for example need to push modified items to 3rd party API, but it has a rate limiter on server
+side, so we will get messages from the `items` queue and decide if we can push them to `api` exchange / queue
+directly, or if they need to be delayed (using dead-letter-queue). (Btw. we have
+[dripping-bucket](https://www.npmjs.com/package/dripping-bucket) library for the API rate limitting with RabbitMQ, too!)
+
+The worker getting messages from `api` queue performs the 3rd party communication and updates the DB according to the
+response (and returns API token to `dripping-bucket` rate limitter, ).
 
 ## Building from code
 
