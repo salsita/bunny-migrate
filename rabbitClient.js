@@ -354,7 +354,7 @@ export default class RabbitClient {
   }
 
   prefixParamObj(prefix, names, obj, inner = false) {
-    if (!obj) { return undefined; }
+    if (!obj) { return obj; }
     this.logger.debug(`[RabbitClient] ${inner ? '(inner) ' : ''}prefixParamObj(prefix = "${prefix}", names [${names.length}], obj = ${JSON.stringify(obj)})`);
     const result = {};
     Object.keys(obj).forEach((key) => {

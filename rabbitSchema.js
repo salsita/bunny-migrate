@@ -36,7 +36,7 @@ export default class RabbitSchema {
     if (!key.length) {
       throw new Error('[RabbitSchema] empty routing key!');
     }
-    if (_.any(invalid, (char) => _.contains(key, char))) {
+    if (_.some(invalid, (char) => _.includes(key, char))) {
       throw new Error(`[RabbitSchema] routing key "${key}" contains invalid character(s)!`);
     }
   }
@@ -72,6 +72,7 @@ export default class RabbitSchema {
         throw new Error(`[RabbitSchema] schema key "${key}" is not an array!`);
       }
     });
+    _.forEach(rootArrays, (key) => { schema[key] = schema[key] || []; });
     // typeof for individual fields
     const types = {
       name: 'string',
