@@ -493,26 +493,177 @@ $ bunny-migrate add --schema schema-initial.json --prefix ""
 At this point, there is no queue bound to the `main` exchange. We said there would be a process prushing messages to
 this exchange with routing keys `regular`, `beta`, or `alpha`, based on the user types.
 
-So let's say we want to have queue `bulk-changes` bound to the `main` exchange. Then there would be a worker process
-reading these messages and figuring out what individual items are affected, pushing one message per item to `items` exchange
-/ queue. 
+So let's say we want to have `bulk-changes` exchange bound to the `main` exchange. Then there would be a worker process
+reading messages from corresponding `bulk-changes` queue and figuring out what individual items are affected,
+pushing one message per item to `items` exchange / queue. 
 
 From there we'll for example need to push modified items to 3rd party API, but it has a rate limiter on server
 side, so we will get messages from the `items` queue and decide if we can push them to `api` exchange / queue
 directly, or if they need to be delayed (using dead-letter-queue). (Btw. we have
-[dripping-bucket](https://www.npmjs.com/package/dripping-bucket) library for the API rate limitting with RabbitMQ, too!)
+[dripping-bucket](https://github.com/salsita/dripping-bucket) library for the API rate limitting with RabbitMQ, too!)
 
-The worker getting messages from `api` queue performs the 3rd party communication and updates the DB according to the
-response (and returns API token to `dripping-bucket` rate limitter, ).
+The worker getting messages from `api` queue performs the 3rd party communication and updates the DB based on the
+response it gets from 3rd party service. Also, it returns API token back to `dripping-bucket` rate limiter by pushing a
+message to `responses` exchange / queue (rate-limiter is subscribed to `items` queue as well as to `responses` queue).
+
+Let's say that is your processing pipeline, and you constantly work on improvements and new versions and want to deploy
+new versions to production with *zero downtime* and to move slowly users (first `alpha`, then `beta`, and finally
+`regular` users) to newer versions.
+
+The above example of schema can be coded as follows (and stored in `schema.json` file):
+
+```
+{
+  "exchanges": [
+    { "name": "bulk-changes", "type": "topic" },
+    { "name": "items", "type": "topic" },
+    { "name": "api", "type": "topic" },
+    { "name": "api-wait", "type": "topic" },
+    { "name": "responses", "type": "topic" }
+  ],
+  "queues": [
+    { "name": "bulk-changes" },
+    { "name": "items" },
+    { "name": "api" },
+    { "name": "api-wait", "options": { "arguments": { "x-dead-letter-exchange": "items" } } },
+    { "name": "responses" }
+  ],
+  "queueBindings": [
+    { "queue": "bulk-changes", "exchange": "bulk-changes", "pattern": "#" },
+    { "queue": "items", "exchange": "items", "pattern": "#" },
+    { "queue": "api", "exchange": "api", "pattern": "#" },
+    { "queue": "api-wait", "exchange": "api-wait", "pattern": "#" },
+    { "queue": "responses", "exchange": "responses", "pattern": "#" }
+  ]
+}
+```
+
+Now you have a release with build number `1234` with all the message handlers ready. The handlers know the name of the
+main entry exchange (i.e. `main`), and know the schema above they need to work with. Also, they know (e.g. through their
+config file) that the build number is `1234` and that all exchanges and queues that are part of data-processing pipeline
+will be prefixed with this build number in RabbitMQ.
+
+Now you add your data-processing RabbitMQ pipeline, prefixed with the build number like this:
+
+```
+$ bunny-migrate add --schema schema.json --prefix 1234
+```
+
+You can verify what you have just added to RabbitMQ with 
+
+```
+$ bunny-migrate list
+```
+
+#### Managed rules
+
+As you can see from the `list` command output above, the rules section is now still empty. I.e. there is no routing
+defined from your `main` exchange into the starting exchange of your data-processing pipeline.
+
+Since we installed just one instance of the schema for now, let's define rules that will route all
+`regular`, `beta`, and `alpha` users to this schema instance:
+
+```
+$ ./bin/bunny-migrate add-rule --prefix 1234 --source main --destination bulk-changes --key regular
+```
+
+We will be using source exchange `main` and destination exchange `bulk-changes` in the future as well, so no need to
+specify that each time on the command line, let's extend our `bunny-migrate.cfg` file with these items, so the file now
+becomes:
+
+```
+{
+  "uri": "amqp://user:a@localhost:5672",
+  "bunny-x": "bunny-admin",
+  "source": "main",
+  "destination": "bulk-changes"
+}
+```
+
+Adding routing rules for `beta` and `alpha` users is then easier:
+
+```
+$ bunny-migrate add-rule --prefix 1234 --key beta
+$ bunny-migrate add-rule --prefix 1234 --key alpha
+```
+
+Now you can start all your workers and web-server(s) and everything will be routed / processed as expected, all user
+traffic will be routed through the schema with prefix `1234` and processed by corresponding message handlers.
+
+#### Deploying new releases with *zero downtime*
+
+Later on you have a new release, `2345`, with updated message handlers and perhaps even the RabbitMQ schema (but still
+the entry point to the data-processing part is the `bulk-changes` exchange).
+
+You keep the existing infrastructure running as is (that is release `1234` and its workers / message handlers), as it
+can take hours for all the messages there to be processed / drained.
+
+So in parallel to release `1234` we can add RabbitMQ schema instance for release `2345`:
+
+```
+$ bunny-migrate add --schema schema.json --prefix 2345
+```
+
+Assuming you have also new worker(s) / message handlers deployed in parallel, you can start them now. Again, there is no
+traffic routed to new pipeline `2345`, since all of it is still routed to previous pipeline `1234`.
+
+You want to test with your `alpha` users first that the new pipeline is working fine, so let's route only `aplha`
+users to the new pipeline:
+
+```
+$ bunny-migrate update-rule --prefix 2345 --key alpha
+```
+
+Later on you might route `beta` and `regular` users to new pipeline, too:
+
+```
+$ bunny-migrate update-rule --prefix 2345 --key beta
+$ bunny-migrate update-rule --prefix 2345 --key regular
+```
+
+Then eventually (with some delay) all the messages in pipeline `1234` are processed / drained, so you don't need the
+workers / message handlers associated to it (so can turn them off and possibly release the boxes), and also you can
+remove the corresponding RabbitMQ schema instance:
+
+```
+$ bunny-migrate remove --prefix 1234
+```
 
 ## Building from code
 
-TODO: copy from cci-pingu
-
 ```
-$ git clone ...
+$ git clone git@github.com:salsita/bunny-migrate.git
+$ cd bunny-migrate
+$ npm i
 $ npm run build
 ```
+
+### `package.json` npm scripts
+
+```
+$ npm run build
+```
+
+Generate version file, lint the ES6 source code, transpile the ES6 source code into `dist` directory, and verify the
+(transpiled) tests pass on the (transpiled) code.
+
+```
+$ npm run babel
+```
+
+Transpile (using babel with `.babelrc` configuration file) the ES6 source code
+file into `dist` directory, that is referenced from binary `bin/bunny-migrate`.
+
+```
+$ npm run gen-ver
+```
+Generate `version.js` file exporting the current name and version of the tool, as taken from `package.json` itself.
+
+```
+$ npm run lint
+```
+Lint the (ES6) source code, using `.eslintrc.json` configuration file.
+
 
 ## Licence
 
