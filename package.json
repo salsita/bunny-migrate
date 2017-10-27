@@ -1,0 +1,42 @@
+{
+  "name": "bunny-migrate",
+  "version": "1.0.0",
+  "description": "CLI tool for managing RabbitMQ schema instances",
+  "license": "MIT",
+  "author": "Roman Kaspar <roman@salsitasoft.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/salsita/bunny-migrate"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "scripts": {
+    "babel": "babel *.js --out-dir dist --source-maps inline",
+    "build": "npm run gen-ver && npm run lint && rm -rf dist && npm run babel",
+    "gen-ver": "printf \"// generated code, please see package.json\nexport default {\n  name: '%s',\n  number: '%s'\n}\n\" ${npm_package_name} ${npm_package_version} > version.js",
+    "lint": "eslint *.js"
+  },
+  "bin": {
+    "bunny-migrate": "bin/bunny-migrate"
+  },
+  "keywords": [],
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-preset-stage-0": "^6.24.1",
+    "eslint": "^4.9.0",
+    "eslint-config-standard": "^10.2.1",
+    "eslint-plugin-import": "^2.8.0",
+    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-promise": "^3.6.0",
+    "eslint-plugin-standard": "^3.0.1"
+  },
+  "dependencies": {
+    "amqplib": "^0.5.1",
+    "lodash": "^4.17.4",
+    "minimist": "^1.2.0",
+    "winston": "^2.4.0"
+  }
+}

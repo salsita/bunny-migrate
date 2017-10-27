@@ -1,9 +1,10 @@
 .DS_Store
 node_modules
 npm-debug.log
-dist
 bunny-migrate*.tgz
 bunny-migrate.cfg
-version.js
+/*.js
 schema*.json
+.babelrc
+.eslintrc.json
 .*.swp
