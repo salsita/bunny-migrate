@@ -24,7 +24,7 @@ Once new schema instance is added, you can specify routing rules for your
 main entry exchange. We assume that at the beginning (or near the beginning) of
 your processing pipeline, there is an exchange that routes the messages to
 existing schema instances (e.g. according to `stable`, `next`, `latest` message
-header values). That is useful for (beta-) testing and for draining messages
+routing keys). That is useful for (beta-) testing and for draining messages
 from existing schema instances when switching to newer processing pipelines with
 zero down-time.
 
@@ -43,14 +43,14 @@ Installing this module adds a runnable file into your `node_modules/.bin` direct
 
 ## Commands
 
-The tool supports the following commands, for detail explanation see sections below:
+The tool supports the following commands; for detailed explanation see the sections below:
 * `init`: inits the structures to keep run-info in RabbitMQ,
-* `list`: lists managed schemas and rules,
+* `list`: lists managed schema instances and rules,
 * `add`: adds new schema instance,
 * `remove`: removes existing schema instance,
 * `add-rule`: adds new managed rule,
 * `remove-rule`: removes existing managed rule,
-* `update-rule`: removes existing manged rule and add a new one in turn,
+* `update-rule`: removes existing managed rule and adds a new one in turn,
 * `version`: prints version and terminates,
 * `help`: prints short help and terminates.
 
@@ -73,7 +73,7 @@ holds run-time information about the system.
 ```
 {
   // RabbitMQ instance to connect to
-  "uri": "amqp://user:a@localhost:5672/vhost",
+  "uri": "amqp://user:password@localhost:5672/vhost",
 
   // name of exchange / queue holding the run-time information
   "bunny-x": "bunny-migrate",
@@ -103,7 +103,7 @@ holds run-time information about the system.
 
 Note: the comments in the above example must be stripped, they make the JSON invalid.
 
-Even though you can specify all paramteres in the configuration file like shown above,
+Even though you can specify all parameters in the configuration file like shown above,
 it makes better sense to store there only the ones commonly used (`uri`, `bunny-x`,
 and perhaps `source`), and provide the remaining parameters on the command line
 when invoking the tool.
@@ -149,7 +149,7 @@ To see the debug messages as well, you need to pass `--debug` or `-d` command
 line parameter (or config file equivalent).
 
 On the other hand, when passing `--quiet` or `-q` parameter, all output messages but
-errors are supressed.
+errors are suppressed.
 
 In case both `--quiet` and `--debug` parameters are passed, `--debug` takes precedence.
 
@@ -157,12 +157,12 @@ The tool returns zero exit code upon success, non-zero exit code on errors. The
 tools terminates its execution when running into the first unexpected problem.
 To keep the RabbitMQ state as healthy and consistent, we check as much as possible
 in advance to minimize the risk of something
-going wrong (e.g. the tool verifies that none of the exchanges and queues exist
+going wrong (e.g. the tool verifies that none of the exchanges and queues exists
 before it tries creating them, or that all of the exchanges and queues do exist
 before removing them).
 
 But sometimes, you know, life is tough and you have some leftovers in RabbitMQ.
-For this case we introduced the `--force` or `-f` command line option (or its config
+For this case we have introduced the `--force` or `-f` command line option (or its config
 file equivalent), that skips all the tests and the tool does not terminate when
 running into unexpected issues. Warning: use with caution! There are still some
 cases (e.g. RabbitMQ connection error) in which even the `--force` parameter will not
@@ -188,7 +188,7 @@ run-time information for future usage there.
 
 `bunny-x` exchange and queue must not exist prior to running this command (in
 case either of them does, the tool terminates). Also, you should never manipulate
-message(s) in `bunny-x` queue by hand or other tools than `bunny-migrate`.
+message in `bunny-x` queue by hand or other tools than `bunny-migrate`.
 
 ## Information about running system
 
@@ -252,7 +252,7 @@ Each exchange-to-exchange binding from `exchangeBindings` array of the schema JS
 asserts a routing path from one exchange to another one based on provided pattern.
 The binding is described with an object with the following keys:
 * [mandatory] `destination`: the name of exchange where to route messages to,
-* [mandaroty] `source`: the name of exchange where to route messages from,
+* [mandatory] `source`: the name of exchange where to route messages from,
 * [mandatory] `pattern`: the routing pattern,
 * [optional] `args`: an object containing extra arguments that may be required for the particular exchange type.
 
@@ -278,7 +278,7 @@ This will add new RabbitMQ schema instance, as described in `schema` JSON file.
 All exchanges and queues will be prefixed with `prefix-string` and a dot (`.`).
 For example: if there is a queue `tasks` described in the schema file, and the provided
 prefix is `prefix`, then the name of the resulting queue created in RabbitMQ will be
-`prefix.tasks`.
+`prefix.tasks`. If the prefix is empty string, the dot is NOT prepended.
 
 Before any exchanges and queues are created, the tool checks (from run-time information
 stored in Rabbit `<bunny-x>` queue) if provided `prefix` is not in use yet.
@@ -373,7 +373,8 @@ different routing `key` (e.g. called `stable`). Then you can recycle the routing
 `key` `latest` to a newer version of the schema (with another `prefix`) in the
 future and use it again for initial testing.
 * You might create the initial part of your RabbitMQ schema using this tool as
-well. Use appropriate corresponding prefix, e.g. `main` or `master` for it. When referencing the
+well. Use appropriate corresponding prefix, e.g. `main` or `master` for it
+(or you can even use empty string). When referencing the
 `source` exchange, you need to include that prefix into the name (as it should
 be different prefix from what you are using to add the managed rule). So say you
 created exchange `router` as part of schema instance `main`. So here, as
@@ -430,7 +431,7 @@ requested what data bulk update, and workers (subscribed to RabbitMQ queue `requ
 messages to) will take it from there. The end result is that the user's request for data bulk edit is processed and the
 data is updated accordingly in the DB (and pushed to 3rd party services as well).
 
-Now let's assume you have RabbitMQ installed on your production  machine `machine`, user `user` and password `password` created,
+Now let's assume you have RabbitMQ installed on your production  machine `machine`, user `user` with password `password` created,
 with access to the RabbitMQ vhost `vhost`. (Also, you have `bunny-migrate` tool installed. ;-))
 
 First of all, since we'll be using only the above described RabbitMQ installation in our example,
@@ -490,7 +491,7 @@ $ bunny-migrate add --schema schema-initial.json --prefix ""
 
 #### Data-processing schema
 
-At this point, there is no queue bound to the `main` exchange. We said there would be a process prushing messages to
+At this point, there is no queue bound to the `main` exchange. We said there would be a process pushing messages to
 this exchange with routing keys `regular`, `beta`, or `alpha`, based on the user types.
 
 So let's say we want to have `bulk-changes` exchange bound to the `main` exchange. Then there would be a worker process
@@ -500,7 +501,7 @@ pushing one message per item to `items` exchange / queue.
 From there we'll for example need to push modified items to 3rd party API, but it has a rate limiter on server
 side, so we will get messages from the `items` queue and decide if we can push them to `api` exchange / queue
 directly, or if they need to be delayed (using dead-letter-queue). (Btw. we have
-[dripping-bucket](https://github.com/salsita/dripping-bucket) library for the API rate limitting with RabbitMQ, too!)
+[dripping-bucket](https://github.com/salsita/dripping-bucket) library for the API rate limiting with RabbitMQ, too!)
 
 The worker getting messages from `api` queue performs the 3rd party communication and updates the DB based on the
 response it gets from 3rd party service. Also, it returns API token back to `dripping-bucket` rate limiter by pushing a
@@ -573,7 +574,7 @@ becomes:
 
 ```
 {
-  "uri": "amqp://user:a@localhost:5672",
+  "uri": "amqp://user:password@machine:5672/vhost",
   "bunny-x": "bunny-admin",
   "source": "main",
   "destination": "bulk-changes"
@@ -607,7 +608,7 @@ $ bunny-migrate add --schema schema.json --prefix 2345
 Assuming you have also new worker(s) / message handlers deployed in parallel, you can start them now. Again, there is no
 traffic routed to new pipeline `2345`, since all of it is still routed to previous pipeline `1234`.
 
-You want to test with your `alpha` users first that the new pipeline is working fine, so let's route only `aplha`
+You want to test with your `alpha` users first that the new pipeline is working fine, so let's route only `alpha`
 users to the new pipeline:
 
 ```
