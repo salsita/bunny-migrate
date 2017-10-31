@@ -1,6 +1,6 @@
 {
   "name": "bunny-migrate",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "CLI tool for managing RabbitMQ schema instances",
   "license": "MIT",
   "author": "Roman Kaspar <roman@salsitasoft.com>",
@@ -9,7 +9,7 @@
     "url": "https://github.com/salsita/bunny-migrate"
   },
   "engines": {
-    "node": ">=6.0.0"
+    "node": "^8.0.0"
   },
   "scripts": {
     "babel": "babel *.js --out-dir dist --source-maps inline",
