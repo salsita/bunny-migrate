@@ -79,8 +79,18 @@ For more help please see https://github.com/salsita/bunny-migrate/blob/master/RE
 
       case 'add':
         cfgParams.ensure(['schema', 'prefix']);
+        const updateRule = cfgParams.get('update-rule');
+        if (updateRule) {
+          cfgParams.ensure(['prefix', 'destination', 'source', 'key']);
+          schema.validateRoutingKey(cfgParams.get('key'));
+          args = schema.validateArgs(cfgParams.get('args'));
+        }
         const validSchema = await schema.load(cfgParams.get('schema'));
         await client.addSchema(validSchema, cfgParams.get('prefix'));
+        if (updateRule) {
+          await client.removeRule(cfgParams.get('key'), true);
+          await client.addRule(cfgParams.get('prefix'), cfgParams.get('destination'), cfgParams.get('source'), cfgParams.get('key'), args);
+        }
         break;
 
       case 'remove':

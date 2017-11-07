@@ -476,6 +476,8 @@ export default class RabbitClient {
       const message = `[RabbitClient] no run-time information about managed rule with routing key "${key}"!`;
       if (warnOnMissingKey) {
         this.logger.warn(message);
+        if (this.adminChannel) { await this.adminChannel.recover(); }
+        return;
       } else {
         throw new Error(message);
       }
@@ -501,6 +503,7 @@ export default class RabbitClient {
     });
 
     // update run-time info
+
     adminMsg.rules[key] = undefined;
     this.logger.info('[RabbitClient] publishing updated run-time info');
     await this.publishJSON(this.adminXQ, ADMIN_ROUTING_KEY, adminMsg, { persistent: true });
