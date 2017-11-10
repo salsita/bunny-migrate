@@ -565,7 +565,7 @@ Since we installed just one instance of the schema for now, let's define rules t
 `regular`, `beta`, and `alpha` users to this schema instance:
 
 ```
-$ ./bin/bunny-migrate add-rule --prefix 1234 --source main --destination bulk-changes --key regular
+$ bunny-migrate add-rule --prefix 1234 --source main --destination bulk-changes --key regular
 ```
 
 We will be using source exchange `main` and destination exchange `bulk-changes` in the future as well, so no need to

@@ -40,7 +40,7 @@ const run = () => {
   // help / version
 
   const helpMessage = `Supported commands: init, list, add, remove, add-rule, remove-rule, update-rule; help, version.
-For more help please see https://github.com/salsita/bunny-migrate/blob/master/README.md.`;
+For more help please see https://github.com/salsita/bunny-migrate/blob/master/README.md`;
   if (cfgParams.get(['v', 'version'])) { process.exit(0); }
   if (cfgParams.get(['h', 'help'])) {
     logger.info(helpMessage);
