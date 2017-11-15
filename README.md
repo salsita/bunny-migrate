@@ -61,7 +61,7 @@ looked up in current working directory, or file explicitly provided with `--conf
 or they need to be provided on command line. If a parameter
 is provided in both the config file and on the command line, the one from
 command line is used. If any mandatory value (needed for given command) is
-missing, the tool terminates. Mandatory and optional parameters for
+missing, the tool terminates. Mandatory and [optional] parameters for
 each command are listed in respective sections below.
 
 Information about added schema instances and associated routing rules are
@@ -178,7 +178,7 @@ tool inside the RabbitMQ instance.
 $ bunny-migrate init
 ```
 
-Mandatory parameters:
+Parameters:
 * `uri`
 * `bunny-x`
 
@@ -196,7 +196,7 @@ message in `bunny-x` queue by hand or other tools than `bunny-migrate`.
 $ bunny-migrate list
 ```
 
-Mandatory parameters:
+Parameters:
 * `uri`
 * `bunny-x`
 
@@ -208,18 +208,18 @@ use other tools to get that.
 ## Schema definition file format
 
 Schema definition file is a JSON file. The schema JSON has 4 root keys:
-* [optional] `exchanges`: array of exchanges to create,
-* [optional] `queues`: array of queues to create,
-* [optional] `queueBindings`: array of queue-to-exchange bindings to define,
-* [optional] `exchangeBindings`: array of exchange-to-exchange bindings to define.
+* `[exchanges]`: array of exchanges to create,
+* `[queues]`: array of queues to create,
+* `[queueBindings]`: array of queue-to-exchange bindings to define,
+* `[exchangeBindings]`: array of exchange-to-exchange bindings to define.
 
 ### Exchanges
 
 Each exchange in the `exchanges` array of the schema JSON is described with an
 object with following keys:
-* [mandatory] `name`: the name of exchange to create,
-* [mandatory] `type`: the type of exchange to create (`direct`, `fanout`, `topic`, or `headers`),
-* [optional] `options`: object passed to `assertExchange()` if provided (see [docs](http://www.squaremobius.net/amqp.node/channel_api.html#channel_assertExchange)).
+* `name`: the name of exchange to create,
+* `type`: the type of exchange to create (`direct`, `fanout`, `topic`, or `headers`),
+* `[options]`: object passed to `assertExchange()` if provided (see [docs](http://www.squaremobius.net/amqp.node/channel_api.html#channel_assertExchange)).
 
 Each exchange name must be unique (can appear in the list of `exchanges` just once).
 
@@ -227,8 +227,8 @@ Each exchange name must be unique (can appear in the list of `exchanges` just on
 
 Each queue in the `queues` array of the schema JSON is described with an object
 with the following keys:
-* [mandatory] `name`: the name of queue to create,
-* [optional] `options`: object passed to `assertQueue()` if provided (see [docs](http://www.squaremobius.net/amqp.node/channel_api.html#channel_assertQueue)).
+* `name`: the name of queue to create,
+* `[options]`: object passed to `assertQueue()` if provided (see [docs](http://www.squaremobius.net/amqp.node/channel_api.html#channel_assertQueue)).
 
 Each queue name must be unique (can appear in the list of `queues` just once).
 
@@ -237,10 +237,10 @@ Each queue name must be unique (can appear in the list of `queues` just once).
 Each queue-to-exchange binding from `queueBindings` array of the schema JSON asserts
 a routing path from an exchange to a queue. The binding is described with an
 object with the following keys:
-* [mandatory] `queue`: the name of queue to which to route the messages,
-* [mandatory] `exchange`: the name of exchange from which to route the messages,
-* [mandatory] `pattern`: the routing pattern,
-* [optional] `args`: an object containing extra arguments that may be required
+* `queue`: the name of queue to which to route the messages,
+* `exchange`: the name of exchange from which to route the messages,
+* `pattern`: the routing pattern,
+* `[args]`: an object containing extra arguments that may be required
 for the particular exchange type (see [docs](http://www.squaremobius.net/amqp.node/channel_api.html#channel_bindQueue)).
 
 You are allowed to bind only queues to exchanges that are defined as part of the
@@ -251,10 +251,10 @@ same schema file.
 Each exchange-to-exchange binding from `exchangeBindings` array of the schema JSON 
 asserts a routing path from one exchange to another one based on provided pattern.
 The binding is described with an object with the following keys:
-* [mandatory] `destination`: the name of exchange where to route messages to,
-* [mandatory] `source`: the name of exchange where to route messages from,
-* [mandatory] `pattern`: the routing pattern,
-* [optional] `args`: an object containing extra arguments that may be required for the particular exchange type.
+* `destination`: the name of exchange where to route messages to,
+* `source`: the name of exchange where to route messages from,
+* `pattern`: the routing pattern,
+* `[args]`: an object containing extra arguments that may be required for the particular exchange type.
 
 You are allowed to bind only exchanges that are defined as part of the same schema file.
 
@@ -264,14 +264,12 @@ You are allowed to bind only exchanges that are defined as part of the same sche
 $ bunny-migrate add
 ```
 
-Mandatory parameters:
+Parameters:
 * `uri`
 * `bunny-x`
 * `schema`
 * `prefix`
-
-Optional parameter:
-* `update-rule`
+* `[update-rule]`
 
 This will add new RabbitMQ schema instance, as described in `schema` JSON file.
 
@@ -312,7 +310,7 @@ the `update-rule` command below.
 $ bunny-migrate remove
 ```
 
-Mandatory parameters:
+Parameters:
 * `uri`
 * `bunny-x`
 * `prefix`
@@ -333,16 +331,14 @@ All associated bindings are removed along with the entities.
 $ bunny-migrate add-rule
 ```
 
-Mandatory parameters:
+Parameters:
 * `uri`
 * `bunny-x`
 * `prefix`
 * `destination`
 * `source`
 * `key`
-
-Optional parameter:
-* `args`
+* `[args]`
 
 A managed rule is an exchange-to-exchange binding, specifying routing rule
 between existing exchange `source` (that might or might not be created as part of
@@ -386,7 +382,7 @@ created exchange `router` as part of schema instance `main`. So here, as
 $ bunny-migrate remove-rule
 ```
 
-Mandatory parameters:
+Parameters:
 * `uri`
 * `bunny-x`
 * `key`
@@ -403,7 +399,7 @@ other bindings (if there are any) are not affected.
 $ bunny-migrate update-rule
 ```
 
-Mandatory and optional parameters: see `add-rule` command.
+Parameters: see `add-rule` command.
 
 This command (for given existing routing `key`) first removes existing managed
 rule (if there is one) and adds another in turn based on provided parameters.
