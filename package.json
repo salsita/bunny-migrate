@@ -1,6 +1,6 @@
 {
   "name": "bunny-migrate",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "CLI tool for managing RabbitMQ schema instances",
   "license": "MIT",
   "author": "Roman Kaspar <roman@salsitasoft.com>",
@@ -35,7 +35,7 @@
     "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.6.1",
     "babel-preset-stage-0": "^6.24.1",
-    "eslint": "^4.10.0",
+    "eslint": "^4.11.0",
     "eslint-config-standard": "^10.2.1",
     "eslint-plugin-import": "^2.8.0",
     "eslint-plugin-node": "^5.2.1",
@@ -43,7 +43,7 @@
     "eslint-plugin-standard": "^3.0.1"
   },
   "dependencies": {
-    "amqplib": "^0.5.1",
+    "amqplib": "^0.5.2",
     "babel-core": "^6.26.0",
     "babel-polyfill": "^6.26.0",
     "lodash": "^4.17.4",

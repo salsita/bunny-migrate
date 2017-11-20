@@ -211,7 +211,8 @@ Schema definition file is a JSON file. The schema JSON has 4 root keys:
 * `[exchanges]`: array of exchanges to create,
 * `[queues]`: array of queues to create,
 * `[queueBindings]`: array of queue-to-exchange bindings to define,
-* `[exchangeBindings]`: array of exchange-to-exchange bindings to define.
+* `[exchangeBindings]`: array of exchange-to-exchange bindings to define,
+* `[messages]`: array of messages to push into newly created exchanges and/or queues.
 
 ### Exchanges
 
@@ -258,6 +259,19 @@ The binding is described with an object with the following keys:
 
 You are allowed to bind only exchanges that are defined as part of the same schema file.
 
+### Messages
+
+Each message from `messages` array of the schema JSON describes a message (or multiple of messages) that will be pushed
+to newly created exchange or queue. The message is described with an object with the following keys:
+* `exchange` or `queue`: name of the exchange or the queue to push the message to (only one of them must be used),
+* `key`: in case the message goes to an exchange, routing key must be specified,
+* `content`: string or object that will be pushed as content of the message; if object is provided, it is converted to string,
+* `[count]`: how many copies of the message to push to the exchange / the queue (default value: 1),
+* `[options]`: additional options passed to the `publish()` or `sendToQueue()` methods (see the
+[docs](http://www.squaremobius.net/amqp.node/channel_api.html#channel_publish) for more details).
+
+You are allowed to push messages only to exchanges and/or queues that are defined as part of the same schema file.
+
 ## Creating new schema instance
 
 ```
@@ -294,8 +308,11 @@ Whenever `options` or `args` object is to be passed, it is traversed (recursivel
 that match name of exchange or queue (not prefixed) are replaced with string values of prefixed
 equivalent.
 
-When all entities are created, the run-time information in `<bunny-x>` queue is updated
-with information about this schema instance.
+Once all the entities are created and bound properly, the tool pushes messages to exchanges and/or to queues according to
+the `messages` schema array. In this case the optional `options` object is NOT traversed and no prefixing of exchange /
+queue names takes place, as none of the keys of the `options` object should reference an exchange or a queue.
+
+After that the run-time information in `<bunny-x>` queue is updated with information about this schema instance.
 
 If `update-rule` is set to `true`, the mandatory and optional parameters of the
 command are extended with the ones for `update-rule` command (that is
@@ -492,7 +509,7 @@ this exchange with routing keys `regular`, `beta`, or `alpha`, based on the user
 
 So let's say we want to have `bulk-changes` exchange bound to the `main` exchange. Then there would be a worker process
 reading messages from corresponding `bulk-changes` queue and figuring out what individual items are affected,
-pushing one message per item to `items` exchange / queue. 
+pushing one message per item to `items` exchange / queue.
 
 From there we'll for example need to push modified items to 3rd party API, but it has a rate limiter on server
 side, so we will get messages from the `items` queue and decide if we can push them to `api` exchange / queue
@@ -531,6 +548,10 @@ The above example of schema can be coded as follows (and stored in `schema.json`
     { "queue": "api", "exchange": "api", "pattern": "#" },
     { "queue": "api-wait", "exchange": "api-wait", "pattern": "#" },
     { "queue": "responses", "exchange": "responses", "pattern": "#" }
+  ],
+  "messages": [
+    { "exchange": "bulk-changes", "key": "routing-key", "content": { "type": "via exchange" } },
+    { "queue": "bulk-changes", "content": { "type": "direct push" }, "count": 7 }
   ]
 }
 ```
@@ -551,6 +572,14 @@ You can verify what you have just added to RabbitMQ with
 ```
 $ bunny-migrate list
 ```
+
+The `messages` section of the above schema illustrates how to populate queues with messages (with token messages, for
+testing, ...). In our example we push one message to `bulk-changes` exchange with routing key `routing-key` and with
+given content (payload). Taking into account the first binding defined in the `queueBindings` array (esp. routing
+pattern `#`), this message ends up in the `bulk-changes` queue.
+
+The second record in `messages` array demonstrates direct message push to specified queue (to `bulk-changes` queue
+again). This time we added `count` option set to 7, so in the end you end up with 8 messages in total in that queue.
 
 #### Managed rules
 

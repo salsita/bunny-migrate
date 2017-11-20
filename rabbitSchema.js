@@ -63,7 +63,7 @@ export default class RabbitSchema {
   validateSchema (schema) {
     this.logger.debug('[RabbitSchema] validateSchema(schema)');
     // root
-    const rootArrays = ['exchanges', 'queues', 'queueBindings', 'exchangeBindings'];
+    const rootArrays = ['exchanges', 'queues', 'queueBindings', 'exchangeBindings', 'messages'];
     _.forEach(_.keys(schema), (key) => {
       if (!_.some(rootArrays, (name) => (name === key))) {
         throw new Error(`[RabbitSchema] unsupported schema object key "${key}" found!`);
@@ -83,58 +83,74 @@ export default class RabbitSchema {
       pattern: 'string',
       args: 'object',
       source: 'string',
-      destination: 'string'
+      destination: 'string',
+      key: 'string',
+      count: 'number',
+      content: ['string', 'object']
     };
     this.validateArray(schema, 'exchanges', { name: true, type: true, options: false }, types);
     this.validateArray(schema, 'queues', { name: true, options: false }, types);
     this.validateArray(schema, 'queueBindings', { exchange: true, queue: true, pattern: true, args: false }, types);
     this.validateArray(schema, 'exchangeBindings', { source: true, destination: true, pattern: true, args: false }, types);
+    this.validateArray(schema, 'messages', { exchange: false, queue: false, key: false, content: true, count: false, options: false }, types);
     // exchange type enums, exchange name uniqueness
     const exchangeTypes = ['direct', 'fanout', 'topic', 'headers'];
     const exchangeNames = [];
-    if (schema.exchanges) {
-      _.forEach(schema.exchanges, (exchange, idx) => {
-        if (!_.some(exchangeTypes, (type) => (type === exchange.type))) {
-          throw new Error(`[RabbitSchema] value of field "type" of item #${idx + 1} in schema array "exchanges" is invalid (expected: "direct", "fanout", "topic", or "headers", actual: "${exchange.type}")!`);
-        }
-        if (_.some(exchangeNames, (val) => (val === exchange.name))) {
-          throw new Error(`[RabbitSchema] exchange with name "${exchange.name}" defined multiple times!`);
-        }
-        exchangeNames.push(exchange.name);
-      });
-    }
+    _.forEach(schema.exchanges, (exchange, idx) => {
+      if (!_.some(exchangeTypes, (type) => (type === exchange.type))) {
+        throw new Error(`[RabbitSchema] value of field "type" of item #${idx + 1} in schema array "exchanges" is invalid (expected: "direct", "fanout", "topic", or "headers", actual: "${exchange.type}")!`);
+      }
+      if (_.some(exchangeNames, (val) => (val === exchange.name))) {
+        throw new Error(`[RabbitSchema] exchange with name "${exchange.name}" defined multiple times!`);
+      }
+      exchangeNames.push(exchange.name);
+    });
     // queue names uniqueness
     const queueNames = [];
-    if (schema.queues) {
-      _.forEach(schema.queues, (queue) => {
-        if (_.some(queueNames, (name) => (name === queue.name))) {
-          throw new Error(`[RabbitSchema] queue with name "${queue.name}" defined multiple times!`);
-        }
-        queueNames.push(queue.name);
-      });
-    }
+    _.forEach(schema.queues, (queue) => {
+      if (_.some(queueNames, (name) => (name === queue.name))) {
+        throw new Error(`[RabbitSchema] queue with name "${queue.name}" defined multiple times!`);
+      }
+      queueNames.push(queue.name);
+    });
     // exchange-to-queue binding references
-    if (schema.queueBindings) {
-      _.forEach(schema.queueBindings, (binding, idx) => {
-        if (!_.some(exchangeNames, (name) => (name === binding.exchange))) {
-          throw new Error(`[RabbitSchema] exchange-to-queue binding #${idx + 1} references unknown exchange "${binding.exchange}"!`);
-        }
-        if (!_.some(queueNames, (name) => (name === binding.queue))) {
-          throw new Error(`[RabbitSchema] exchange-to-queue binding #${idx + 1} references unknown queue "${binding.queue}"!`);
-        }
-      });
-    }
+    _.forEach(schema.queueBindings, (binding, idx) => {
+      if (!_.some(exchangeNames, (name) => (name === binding.exchange))) {
+        throw new Error(`[RabbitSchema] exchange-to-queue binding #${idx + 1} references unknown exchange "${binding.exchange}"!`);
+      }
+      if (!_.some(queueNames, (name) => (name === binding.queue))) {
+        throw new Error(`[RabbitSchema] exchange-to-queue binding #${idx + 1} references unknown queue "${binding.queue}"!`);
+      }
+    });
     // exchange-to-exchange binding references
-    if (schema.exchangeBindings) {
-      _.forEach(schema.exchangeBindings, (binding, idx) => {
-        if (!_.some(exchangeNames, (name) => (name === binding.source))) {
-          throw new Error(`[RabbitSchema] exchange-to-exchange binding #${idx + 1} references unknown source exchange "${binding.source}"!`);
-        }
-        if (!_.some(exchangeNames, (name) => (name === binding.destination))) {
-          throw new Error(`exchange-to-exchange binding #${idx + 1} references unknown destination exchange "${binding.destination}"!`);
-        }
-      });
-    }
+    _.forEach(schema.exchangeBindings, (binding, idx) => {
+      if (!_.some(exchangeNames, (name) => (name === binding.source))) {
+        throw new Error(`[RabbitSchema] exchange-to-exchange binding #${idx + 1} references unknown source exchange "${binding.source}"!`);
+      }
+      if (!_.some(exchangeNames, (name) => (name === binding.destination))) {
+        throw new Error(`exchange-to-exchange binding #${idx + 1} references unknown destination exchange "${binding.destination}"!`);
+      }
+    });
+    // messages
+    _.forEach(schema.messages, (message, idx) => {
+      if (!message.exchange && !message.queue) {
+        throw new Error(`[RabbitSchema] messsage #${idx + 1} is missing the target (exchange or queue name)!`);
+      }
+      if (message.exchange && message.queue) {
+        throw new Error(`[RabbitSchema] message #${idx + 1} has both exchange and queue specified, pick just one!`);
+      }
+      if (message.exchange && typeof message.key !== 'string') {
+        throw new Error(`[RabbitSchema] routing key missing for message #${idx + 1} (routed to exchange "${message.exchange}")!`);
+      }
+      if (message.exchange && !_.some(exchangeNames, (name) => (name === message.exchange))) {
+        throw new Error(`[RabbitSchema] message #${idx + 1} references unknown exchange "${message.exchange}"!`);
+      }
+      if (message.queue && !_.some(queueNames, (name) => (name === message.queue))) {
+        throw new Error(`[RabbitSchema] message #${idx + 1} references unknown queue "${message.queue}"!`);
+      }
+      if (typeof message.content === 'object') { message.content = JSON.stringify(message.content, null, 2); }
+      message.count = message.count || 1;
+    });
   }
 
   validateArray(schema, arr, keys, types) {
@@ -151,7 +167,8 @@ export default class RabbitSchema {
         if (!_.some(names, (name) => (name === key))) {
           throw new Error(`[RabbitSchema] unsupported field "${key}" of item #${idx + 1} in schema array "${arr}"`);
         }
-        if (typeof item[key] !== types[key]) { // eslint-disable-line valid-typeof
+        const fieldTypes = typeof types[key] === 'string' ? [ types[key] ] : types[key];
+        if (!_.some(fieldTypes, (type) => (typeof item[key] === type))) { // eslint-disable-line valid-typeof
           throw new Error(`[RabbitSchema] value of field "${key}" of item #${idx + 1} in schema array "${arr}" is of wrong type (expected: "${types[key]}", actual: "${typeof item[key]}")!`);
         }
       });

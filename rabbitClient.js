@@ -279,7 +279,7 @@ export default class RabbitClient {
     // create the entities
 
     const names = _.union(exchangeNames, queueNames);
-    let i;
+    let i, j;
 
     this.logger.info(`[RabbitClient] creating exchanges ["${exchangeNames.join('", "')}"]`);
     for (i = 0; i < schema.exchanges.length; i++) { await this.createExchange(prefix, schema.exchanges[i], names); }
@@ -292,6 +292,25 @@ export default class RabbitClient {
 
     this.logger.info(`[RabbitClient] binding exchanges to exchanges [${schema.exchangeBindings.length}]`);
     for (i = 0; i < schema.exchangeBindings.length; i++) { await this.createExchangeBinding(prefix, schema.exchangeBindings[i], names); }
+
+    // push messages
+
+    this.logger.info(`[RabbitClient] pushing initial messages to exchanges / queues [${schema.messages.length}]`);
+    for (i = 0; i < schema.messages.length; i++) {
+      const message = schema.messages[i];
+      let sent;
+      for (j = 0; j < message.count; j++) {
+        if (message.exchange) {
+          sent = this.channel.publish(this.prefixName(prefix, message.exchange), message.key, Buffer.from(message.content), message.options);
+        } else {
+          sent = this.channel.sendToQueue(this.prefixName(prefix, message.queue), Buffer.from(message.content), message.options);
+        }
+        if (!sent) {
+          await this.throwOrWarn(`[RabbitClient] could not publish copy #${j + 1} of message #${i + 1}!`, false);
+        }
+      }
+      await wait(WAIT_FOR_SENDING);
+    }
 
     // update run-time info
 
