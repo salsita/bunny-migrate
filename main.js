@@ -7,6 +7,9 @@ import { prettyError } from './utils';
 import version from './version';
 
 const run = () => {
+
+
+
   const cfgParams = new ConfigParams(process.argv.slice(2), { minimist: { string: ['config', 'uri', 'bunny-x', 'schema', 'prefix'] } });
   const logger = new winston.Logger({
     transports: [
