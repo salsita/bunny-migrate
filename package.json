@@ -49,5 +49,11 @@
     "lodash": "^4.17.10",
     "minimist": "^1.2.0",
     "winston": "^2.4.2"
+  },
+  "renovate": {
+    "extends": [
+      "config:base"
+    ],
+    "bumpVersion": "patch"
   }
 }
