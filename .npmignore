@@ -8,3 +8,4 @@ schema*.json
 .babelrc
 .eslintrc.json
 .*.swp
+.circleci
