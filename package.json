@@ -1,6 +1,6 @@
 {
   "name": "bunny-migrate",
-  "version": "1.2.15",
+  "version": "1.2.16",
   "description": "CLI tool for managing RabbitMQ schema instances",
   "license": "MIT",
   "author": "Roman Kaspar <roman@salsitasoft.com>",
@@ -46,7 +46,7 @@
     "amqplib": "0.5.2",
     "babel-core": "6.26.3",
     "babel-polyfill": "6.26.0",
-    "lodash": "4.17.10",
+    "lodash": "4.17.11",
     "minimist": "1.2.0",
     "winston": "2.4.4"
   },
