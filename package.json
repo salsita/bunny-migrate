@@ -51,9 +51,11 @@
     "winston": "2.4.4"
   },
   "renovate": {
-    "extends": [
-      "config:base"
-    ],
-    "bumpVersion": "patch"
+    "extends": ["config:base"],
+    "bumpVersion": "patch",
+    "automerge": true,
+    "major": {
+      "automerge": false
+    }
   }
 }
