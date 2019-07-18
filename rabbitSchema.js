@@ -167,7 +167,7 @@ export default class RabbitSchema {
         if (!_.some(names, (name) => (name === key))) {
           throw new Error(`[RabbitSchema] unsupported field "${key}" of item #${idx + 1} in schema array "${arr}"`);
         }
-        const fieldTypes = typeof types[key] === 'string' ? [ types[key] ] : types[key];
+        const fieldTypes = typeof types[key] === 'string' ? [types[key]] : types[key];
         if (!_.some(fieldTypes, (type) => (typeof item[key] === type))) { // eslint-disable-line valid-typeof
           throw new Error(`[RabbitSchema] value of field "${key}" of item #${idx + 1} in schema array "${arr}" is of wrong type (expected: "${types[key]}", actual: "${typeof item[key]}")!`);
         }

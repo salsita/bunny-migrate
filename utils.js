@@ -3,7 +3,7 @@ export const prettyError = (error) => {
   err = (err.message) ? err.message : err;
   err = (err.fields) ? err.fields : err;
   err = (err.replyText) ? err.replyText : err;
-  const arr = (err.split) ? err.split('\n') : [ err ];
+  const arr = (err.split) ? err.split('\n') : [err];
   return arr[0];
 };
 
