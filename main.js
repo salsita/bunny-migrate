@@ -8,16 +8,13 @@ import version from './version';
 
 const run = () => {
   const cfgParams = new ConfigParams(process.argv.slice(2), { minimist: { string: ['config', 'uri', 'bunny-x', 'schema', 'prefix'] } });
-  const logger = new winston.Logger({
-    transports: [
-      new winston.transports.Console({
-        level: cfgParams.get(['d', 'debug']) ? 'debug' : cfgParams.get(['q', 'quiet']) ? 'error' : 'info', // eslint-disable-line no-nested-ternary
-        colorize: true,
-        timestamp: true,
-        humanReadableUnhandledException: true,
-        stderrLevels: [] // log everything to stdout
-      })
-    ]
+  const logger = winston.createLogger({
+    level: cfgParams.get(['d', 'debug']) ? 'debug' : cfgParams.get(['q', 'quiet']) ? 'error' : 'info', // eslint-disable-line no-nested-ternary
+    transports: [new winston.transports.Console()],
+    format: winston.format.combine(
+      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+      winston.format.printf((info) => `${info.timestamp} (${info.level}): ${info.message}`)
+    )
   });
   const client = new RabbitClient(logger, cfgParams.get(['force', 'f']));
   const schema = new RabbitSchema(logger);
