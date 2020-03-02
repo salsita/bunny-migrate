@@ -51,7 +51,7 @@ export default class RabbitClient {
   }
 
   async createAdminXQ() {
-    this.logger.debug(`[RabbitClient] createAdminXQ()`);
+    this.logger.debug('[RabbitClient] createAdminXQ()');
     const name = this.adminXQ;
 
     this.logger.info(`[RabbitClient] checking for admin exchange "${name}"`);
