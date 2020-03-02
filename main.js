@@ -63,18 +63,20 @@ For more help please see https://github.com/salsita/bunny-migrate/blob/master/RE
     let args;
 
     switch (command) {
-      case 'init':
+      case 'init': {
         await client.createAdminXQ();
         break;
+      }
 
-      case 'list':
+      case 'list': {
         const info = await client.readAdminMessage(true);
         logger.info(`[Main] Run-time information about RabbitMQ setup:
 * schemas: ${JSON.stringify(info.schemas, null, 2)}
 * rules: ${JSON.stringify(info.rules, null, 2)}`);
         break;
+      }
 
-      case 'add':
+      case 'add': {
         cfgParams.ensure(['schema', 'prefix']);
         const updateRule = cfgParams.get('update-rule');
         if (updateRule) {
@@ -89,32 +91,37 @@ For more help please see https://github.com/salsita/bunny-migrate/blob/master/RE
           await client.addRule(cfgParams.get('prefix'), cfgParams.get('destination'), cfgParams.get('source'), cfgParams.get('key'), args);
         }
         break;
+      }
 
-      case 'remove':
+      case 'remove': {
         cfgParams.ensure('prefix');
         await client.removeSchema(cfgParams.get('prefix'));
         break;
+      }
 
-      case 'add-rule':
+      case 'add-rule': {
         cfgParams.ensure(['prefix', 'destination', 'source', 'key']);
         schema.validateRoutingKey(cfgParams.get('key'));
         args = schema.validateArgs(cfgParams.get('args'));
         await client.addRule(cfgParams.get('prefix'), cfgParams.get('destination'), cfgParams.get('source'), cfgParams.get('key'), args);
         break;
+      }
 
-      case 'remove-rule':
+      case 'remove-rule': {
         cfgParams.ensure('key');
         schema.validateRoutingKey(cfgParams.get('key'));
         await client.removeRule(cfgParams.get('key'));
         break;
+      }
 
-      case 'update-rule':
+      case 'update-rule': {
         cfgParams.ensure(['prefix', 'destination', 'source', 'key']);
         schema.validateRoutingKey(cfgParams.get('key'));
         await client.removeRule(cfgParams.get('key'), true);
         args = schema.validateArgs(cfgParams.get('args'));
         await client.addRule(cfgParams.get('prefix'), cfgParams.get('destination'), cfgParams.get('source'), cfgParams.get('key'), args);
         break;
+      }
 
       default:
         terminate(`[Main] unsupported command "${command}"!`);
