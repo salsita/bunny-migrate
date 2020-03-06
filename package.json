@@ -9,7 +9,7 @@
     "url": "https://github.com/salsita/bunny-migrate"
   },
   "engines": {
-    "node": "^8.0.0"
+    "node": "^10.0.0"
   },
   "scripts": {
     "babel": "babel *.js --out-dir dist --source-maps inline",
@@ -32,9 +32,9 @@
     "zero-downtime"
   ],
   "devDependencies": {
-    "babel-cli": "6.26.0",
-    "babel-preset-env": "1.7.0",
-    "babel-preset-stage-0": "6.24.1",
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "@babel/preset-env": "^7.8.7",
     "eslint": "6.8.0",
     "eslint-config-standard": "14.1.0",
     "eslint-plugin-import": "2.20.1",
@@ -44,8 +44,6 @@
   },
   "dependencies": {
     "amqplib": "0.5.5",
-    "babel-core": "6.26.3",
-    "babel-polyfill": "6.26.0",
     "lodash": "4.17.15",
     "minimist": "1.2.0",
     "winston": "3.2.1"
