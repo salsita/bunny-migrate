@@ -1,6 +1,2 @@
 #!/usr/bin/env node
-require('babel-core/register');
-require('babel-polyfill');
-
-var run = require('../dist/main');
-run();
+require('../dist/main')();
