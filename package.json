@@ -44,9 +44,9 @@
     "eslint-plugin-standard": "4.0.1"
   },
   "dependencies": {
-    "amqplib": "^0.5.5",
-    "lodash": "^4.17.15",
-    "minimist": "^1.2.0",
-    "winston": "^3.2.1"
+    "amqplib": "0.5.5",
+    "lodash": "4.17.15",
+    "minimist": "1.2.0",
+    "winston": "3.2.1"
   }
 }
