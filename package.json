@@ -16,9 +16,11 @@
   },
   "scripts": {
     "babel": "babel *.js --out-dir dist --source-maps inline",
-    "build": "npm run gen-ver && npm run lint && rm -rf dist && npm run babel",
     "gen-ver": "printf \"// generated code, please see package.json\nexport default {\n  name: '%s',\n  number: '%s'\n}\n\" ${npm_package_name} ${npm_package_version} > version.js",
-    "lint": "eslint *.js"
+    "lint": "eslint *.js",
+    "prebuild": "rimraf dist",
+    "build": "npm run gen-ver && npm run lint && rm -rf dist && npm run babel",
+    "prepare": "npm run build"
   },
   "bin": {
     "bunny-migrate": "bin/bunny-migrate"
@@ -43,7 +45,8 @@
     "eslint-plugin-import": "2.22.0",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "4.2.1",
-    "eslint-plugin-standard": "4.0.1"
+    "eslint-plugin-standard": "4.0.1",
+    "rimraf": "3.0.2"
   },
   "dependencies": {
     "amqplib": "^0.5.5",
