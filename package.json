@@ -51,7 +51,7 @@
   "dependencies": {
     "amqplib": "^0.8.0",
     "lodash": "^4.17.15",
-    "minimist": "^1.2.5",
+    "minimist": "1.2.6",
     "winston": "^3.2.1"
   }
 }
